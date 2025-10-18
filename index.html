@@ -631,6 +631,15 @@
             const displayBaseLength = useInches ? baseLength * CM_TO_INCHES : baseLength;
             const unitSymbol = useInches ? 'in' : 'cm';
 
+            // Preserve the selected state before re-rendering
+            const selectedStringIds = new Set();
+            const existingCheckboxes = document.querySelectorAll('.stringCheckbox');
+            existingCheckboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    selectedStringIds.add(checkbox.dataset.stringUniqueId);
+                }
+            });
+
             // Create helper function to render table rows
             const getTableRows = (stringsToDisplay) => {
                 let html = '';
@@ -646,9 +655,12 @@
                     // For pattern order, show original position + 1; for grouped, show the display index
                     const stringNum = viewMode === 'pattern' ? s.position + 1 : displayIdx + 1;
 
+                    // Create a unique ID for this string
+                    const uniqueStringId = `${s.colorId}-${s.position}`;
+
                     html += `
                         <tr>
-                            <td class="checkbox-cell"><input type="checkbox" class="stringCheckbox" data-string-id="${s.colorId}"></td>
+                            <td class="checkbox-cell"><input type="checkbox" class="stringCheckbox" data-string-unique-id="${uniqueStringId}" ${selectedStringIds.has(uniqueStringId) ? 'checked' : ''}></td>
                             <td>${stringNum}</td>
                             <td><span class="color-swatch" style="background-color: ${colorHex};"></span> ${s.colorId.toUpperCase()}</td>
                             <td>${s.knotsMade} knots</td>
@@ -720,6 +732,10 @@
             const selectAllCheckbox = document.getElementById('selectAllCheckboxes');
             const stringCheckboxes = document.querySelectorAll('.stringCheckbox');
             
+            // Update select-all checkbox to reflect current state
+            const allChecked = Array.from(stringCheckboxes).every(cb => cb.checked);
+            selectAllCheckbox.checked = allChecked;
+            
             // Handle individual checkbox changes
             stringCheckboxes.forEach((checkbox, index) => {
                 checkbox.addEventListener('change', (e) => {
@@ -735,8 +751,13 @@
                     selectAllCheckbox.checked = allChecked;
                 });
                 
-                // Add click handler to the entire row
+                // Apply styling to checked rows
                 const row = checkbox.closest('tr');
+                if (checkbox.checked) {
+                    row.classList.add('checked');
+                }
+                
+                // Add click handler to the entire row
                 row.addEventListener('click', (e) => {
                     // Only toggle if not clicking the checkbox itself
                     if (e.target !== checkbox) {
