@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bracelet String Length Calculator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+            background-color: #f9f9f9;
+        }
+        h1, h2 {
+            color: #111;
+        }
+        .container {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="url"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #results {
+            margin-top: 25px;
+        }
+        #status {
+            margin-top: 15px;
+            font-style: italic;
+            color: #555;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .color-swatch {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            vertical-align: middle;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🧵 Bracelet String Length Calculator</h1>
+        <p>Paste a link to a <strong>normal pattern</strong> SVG from BraceletBook.com to calculate the estimated string lengths.</p>
+
+        <div class="input-group">
+            <label for="svgUrl">BraceletBook SVG URL</label>
+            <input type="url" id="svgUrl" value="https://www.braceletbook.com/media/patterns/000/000/148/888/000000148888/pattern.svg">
+        </div>
+
+        <h2>Parameters (in cm)</h2>
+        <div class="input-group">
+            <label for="startLength">Length for Start (Loop/Buckle)</label>
+            <input type="number" id="startLength" value="15">
+        </div>
+        <div class="input-group">
+            <label for="endLength">Length for End (Ties)</label>
+            <input type="number" id="endLength" value="20">
+        </div>
+        <div class="input-group">
+            <label for="bufferLength">Safety Buffer</label>
+            <input type="number" id="bufferLength" value="10">
+        </div>
+
+        <button id="calculateBtn">Calculate Lengths</button>
+        
+        <div id="status"></div>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const calculateBtn = document.getElementById('calculateBtn');
+        const svgUrlInput = document.getElementById('svgUrl');
+        const statusEl = document.getElementById('status');
+        const resultsEl = document.getElementById('results');
+
+        // Constants from the BraceletBook tutorial
+        const ACTIVE_KNOT_LENGTH = 0.75; // cm
+        const BASE_KNOT_LENGTH = 0.25; // cm
+
+        calculateBtn.addEventListener('click', async () => {
+            const url = svgUrlInput.value.trim();
+            if (!url) {
+                statusEl.textContent = 'Please enter a valid URL.';
+                return;
+            }
+
+            // Reset UI
+            statusEl.textContent = 'Fetching SVG file...';
+            resultsEl.innerHTML = '';
+            calculateBtn.disabled = true;
+
+            try {
+                // Use a CORS proxy to fetch the SVG
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+                const response = await fetch(proxyUrl);
+
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok. Status: ${response.status}`);
+                }
+
+                const svgText = await response.text();
+                statusEl.textContent = 'Parsing SVG and calculating...';
+
+                // Parse the SVG string into a document
+                const parser = new DOMParser();
+                const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
+
+                if (svgDoc.querySelector("parsererror")) {
+                    throw new Error("Failed to parse SVG. Make sure it's a valid SVG file.");
+                }
+
+                calculateLengths(svgDoc);
+
+            } catch (error) {
+                statusEl.textContent = `Error: ${error.message}. Check the URL and your network connection.`;
+                console.error(error);
+            } finally {
+                calculateBtn.disabled = false;
+            }
+        });
+
+        function calculateLengths(svgDoc) {
+            // 1. Get initial string setup from the first row of circles
+            const firstRowCircles = svgDoc.querySelectorAll('g.row:first-of-type circle');
+            if (firstRowCircles.length === 0) {
+                throw new Error("Could not find initial strings. Is this a valid BraceletBook normal pattern SVG?");
+            }
+
+            let strings = Array.from(firstRowCircles).map(circle => {
+                const color = circle.style.fill;
+                return {
+                    color: color,
+                    active_knots: 0,
+                    base_knots: 0
+                };
+            });
+
+            // This array will track the LIVE positions of strings as we move down
+            let stringPositions = [...strings]; 
+
+            // 2. Process all knots
+            const knots = svgDoc.querySelectorAll('g.knot');
+            knots.forEach(knot => {
+                const useEl = knot.querySelector('use');
+                if (!useEl) return;
+
+                const knotType = useEl.getAttribute('xlink:href').replace('#', '');
+                const activeColor = useEl.style.fill;
+
+                // Determine which strings are involved based on knot position
+                const transform = knot.getAttribute('transform');
+                const xPos = parseFloat(transform.match(/translate\(([\d.]+)/)[1]);
+                
+                // In BB patterns, strings are typically 16 units apart, starting at x=16
+                // A knot at x=16 is between string 0 and 1.
+                // A knot at x=32 is between string 1 and 2.
+                const leftStringIndex = Math.round((xPos - 16) / 16);
+                const rightStringIndex = leftStringIndex + 1;
+                
+                if (leftStringIndex < 0 || rightStringIndex >= stringPositions.length) return;
+
+                const leftString = stringPositions[leftStringIndex];
+                const rightString = stringPositions[rightStringIndex];
+
+                let activeString, baseString;
+                
+                // Identify which is active and which is base
+                if (leftString.color === activeColor) {
+                    activeString = leftString;
+                    baseString = rightString;
+                } else if (rightString.color === activeColor) {
+                    activeString = rightString;
+                    baseString = leftString;
+                } else {
+                    // This can happen if two strings of the same color are next to each other.
+                    // The logic assumes the knotter is the one moving.
+                    if (knotType === 'fk' || knotType === 'fkbk') activeString = leftString; // Left string knots over right
+                    else activeString = rightString; // Right string knots over left
+                    baseString = (activeString === leftString) ? rightString : leftString;
+                }
+
+                // 3. Update knot counts
+                const knotValue = (knotType === 'fkbk' || knotType === 'bkfk') ? 2 : 1;
+                activeString.active_knots += knotValue;
+                baseString.base_knots += 1;
+
+                // 4. Swap string positions if necessary
+                if (knotType === 'fk' || knotType === 'bk') {
+                    stringPositions[leftStringIndex] = rightString;
+                    stringPositions[rightStringIndex] = leftString;
+                }
+            });
+
+            // 5. Calculate final lengths and display
+            displayResults(strings);
+        }
+
+        function displayResults(strings) {
+            const startLen = parseFloat(document.getElementById('startLength').value) || 0;
+            const endLen = parseFloat(document.getElementById('endLength').value) || 0;
+            const bufferLen = parseFloat(document.getElementById('bufferLength').value) || 0;
+            const overhead = startLen + endLen + bufferLen;
+
+            let tableHTML = `
+                <h2>📊 Estimated Lengths</h2>
+                <table>
+                    <tr>
+                        <th>Color</th>
+                        <th>Knotting Length</th>
+                        <th>Total Overhead</th>
+                        <th><strong>Total Estimated Length</strong></th>
+                    </tr>
+            `;
+
+            strings.forEach(s => {
+                const knottingLength = (s.active_knots * ACTIVE_KNOT_LENGTH) + (s.base_knots * BASE_KNOT_LENGTH);
+                const totalLength = knottingLength + overhead;
+
+                tableHTML += `
+                    <tr>
+                        <td><span class="color-swatch" style="background-color: ${s.color};"></span> ${s.color}</td>
+                        <td>${knottingLength.toFixed(2)} cm</td>
+                        <td>${overhead.toFixed(2)} cm</td>
+                        <td><strong>${totalLength.toFixed(2)} cm</strong></td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += '</table>';
+            resultsEl.innerHTML = tableHTML;
+            statusEl.textContent = 'Calculation complete.';
+        }
+    </script>
+
+</body>
+</html>
