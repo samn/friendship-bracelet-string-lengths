@@ -85,7 +85,7 @@
             border-radius: 50%;
             vertical-align: middle;
             margin-right: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid #000;
         }
         code {
             background-color: #f5f5f5;
@@ -243,7 +243,7 @@
 
         <div class="input-group">
             <label for="svgUrl">BraceletBook Pattern URL</label>
-            <input type="url" id="svgUrl" value="https://www.braceletbook.com/patterns/normal/148888/" placeholder="https://www.braceletbook.com/patterns/normal/199552/">
+            <input type="url" id="svgUrl" value="https://www.braceletbook.com/patterns/normal/148888/" placeholder="https://www.braceletbook.com/patterns/normal/199552/" onfocus="this.select()">
         </div>
 
         <div class="toggle-container">
@@ -460,6 +460,22 @@
             }
         });
 
+        // Add paste event listener to the URL input
+        svgUrlInput.addEventListener('paste', async (event) => {
+            event.preventDefault();
+            const pastedText = (event.clipboardData || window.clipboardData).getData('text');
+            if (pastedText) {
+                try {
+                    const normalizedUrl = validateAndNormalizeUrl(pastedText);
+                    svgUrlInput.value = normalizedUrl;
+                    // Trigger calculation after pasting
+                    calculateBtn.click();
+                } catch (error) {
+                    statusEl.textContent = error.message;
+                }
+            }
+        });
+
         function calculateLengths(svgDoc) {
             // 1. Get initial string colors from <g class="s"> elements
             const stringElements = svgDoc.querySelectorAll('g.s');
@@ -475,14 +491,45 @@
                 const colorClass = classList.find(c => c.startsWith('s1-'));
                 const colorId = colorClass ? colorClass.split('-')[1] : `color${idx}`;
                 
+                // Extract actual color from the element or CSS
+                // Try to get stroke from the use element first
+                let actualColor = null;
+                const style = pathEl.getAttribute('style');
+                if (style) {
+                    const strokeMatch = style.match(/stroke:\s*(#[0-9a-f]{6,8}|[a-z]+)/i);
+                    if (strokeMatch) {
+                        actualColor = strokeMatch[1];
+                    }
+                }
+                
+                // If not in style, try stroke attribute
+                if (!actualColor) {
+                    actualColor = pathEl.getAttribute('stroke');
+                }
+                
+                // If still not found, look for a style element that defines it
+                if (!actualColor && colorClass) {
+                    const colorStyleId = colorClass; // e.g., "s1-a"
+                    const styleElements = svgDoc.querySelectorAll('style');
+                    for (let styleEl of styleElements) {
+                        // Match CSS rules like ".s1-a{stroke:#1b2d75}" or ".s1-a { stroke: #1b2d75 }"
+                        const match = styleEl.textContent.match(new RegExp(`\\.${colorStyleId.replace(/[-]/g, '\\-')}\\s*\\{[^}]*stroke:\\s*(#[0-9a-f]{6,8})[^}]*\\}`, 'i'));
+                        if (match) {
+                            actualColor = match[1];
+                            break;
+                        }
+                    }
+                }
+                
                 return {
                     colorId: colorId,
                     position: idx,
-                    knotsMade: 0
+                    knotsMade: 0,
+                    actualColor: actualColor || '#cccccc' // Fallback gray color
                 };
             });
 
-            // Count total rows (look for text elements with class "n n_l" which mark rows)
+            // Count total rows (look for text elements with class "n n_l" which mark left side row numbers)
             const rowElements = svgDoc.querySelectorAll('text.n.n_l');
             const numRows = rowElements.length;
             
@@ -593,13 +640,8 @@
                     const totalLength = baseLength + percentage;
                     const displayTotalLength = useInches ? totalLength * CM_TO_INCHES : totalLength;
 
-                    // Map color IDs to more readable names
-                    const colorMap = {
-                        'a': '#a11567',
-                        'b': '#fa91d7', 
-                        'c': '#ffffff'
-                    };
-                    const colorHex = colorMap[s.colorId] || s.colorId;
+                    // Use actual color for display
+                    const colorHex = s.actualColor;
 
                     // For pattern order, show original position + 1; for grouped, show the display index
                     const stringNum = viewMode === 'pattern' ? s.position + 1 : displayIdx + 1;
@@ -608,7 +650,7 @@
                         <tr>
                             <td class="checkbox-cell"><input type="checkbox" class="stringCheckbox" data-string-id="${s.colorId}"></td>
                             <td>${stringNum}</td>
-                            <td><span class="color-swatch" style="background-color: ${colorHex}; ${s.colorId === 'c' ? 'border: 2px solid #ccc;' : ''}"></span> ${s.colorId.toUpperCase()}</td>
+                            <td><span class="color-swatch" style="background-color: ${colorHex};"></span> ${s.colorId.toUpperCase()}</td>
                             <td>${s.knotsMade} knots</td>
                             <td>${percentage.toFixed(1)}%</td>
                             <td>${displayBaseLength.toFixed(2)} ${unitSymbol}</td>
@@ -721,6 +763,10 @@
             });
         }
     </script>
+
+    <div class="container" style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px; text-align: center; font-size: 12px; color: #999;">
+        <p>Formula and calculation method based on <a href="https://www.braceletbook.com/tutorials/173_how-to-calculate-string-length-in-a-normal-pattern/" target="_blank" style="color: #007bff; text-decoration: none;">halokiwi's tutorial on calculating string lengths on BraceletBook.com</a>.</p>
+    </div>
 
 </body>
 </html>
