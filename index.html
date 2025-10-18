@@ -87,30 +87,184 @@
             margin-right: 10px;
             border: 1px solid #ccc;
         }
+        code {
+            background-color: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 12px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+        .toggle-label {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 30px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background-color: #007bff;
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(30px);
+        }
+        .unit-display {
+            font-weight: bold;
+            font-size: 14px;
+            min-width: 50px;
+        }
+        .parameter-unit {
+            font-weight: normal;
+            font-size: 12px;
+            color: #999;
+            margin-left: 4px;
+        }
+        .toggle-unit-group {
+            display: flex;
+            gap: 0;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #ddd;
+        }
+        .toggle-unit-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+            color: #666;
+            transition: all 0.2s ease;
+        }
+        .toggle-unit-btn:first-child {
+            border-right: 1px solid #ddd;
+        }
+        .toggle-unit-btn.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .toggle-unit-btn:hover:not(.active) {
+            background-color: #f0f0f0;
+        }
+        input[type="checkbox"] {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            accent-color: #007bff;
+        }
+        tr.checked {
+            background-color: #e8f4f8;
+            opacity: 0.7;
+        }
+        tr.checked td {
+            color: #999;
+        }
+        .checkbox-cell {
+            text-align: center;
+        }
+        @media (max-width: 768px) {
+            body {
+                max-width: 100%;
+                margin: 0;
+                padding: 10px;
+            }
+            .container {
+                padding: 15px;
+                border-radius: 0;
+            }
+            table {
+                font-size: 14px;
+            }
+            th, td {
+                padding: 8px;
+            }
+            /* Hide Knots Made, Percentage, and Base Length columns on mobile */
+            th:nth-child(4),
+            td:nth-child(4),
+            th:nth-child(5),
+            td:nth-child(5),
+            th:nth-child(6),
+            td:nth-child(6) {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
         <h1>🧵 Bracelet String Length Calculator</h1>
-        <p>Paste a link to a <strong>normal pattern</strong> SVG from BraceletBook.com to calculate the estimated string lengths.</p>
+        <p>Paste a link to a <strong>normal pattern</strong> from BraceletBook.com to calculate the estimated string lengths.</p>
+        <p style="font-size: 14px; color: #666; margin-top: -10px;">
+            <strong>Tip:</strong> You can paste either:<br>
+            • A pattern page URL (e.g., <code>braceletbook.com/patterns/normal/199552/</code>)<br>
+            • Or the direct <code>pattern.svg</code> URL (preview.svg will be automatically converted)
+        </p>
 
         <div class="input-group">
-            <label for="svgUrl">BraceletBook SVG URL</label>
-            <input type="url" id="svgUrl" value="https://www.braceletbook.com/media/patterns/000/000/148/888/000000148888/pattern.svg">
+            <label for="svgUrl">BraceletBook Pattern URL</label>
+            <input type="url" id="svgUrl" value="https://www.braceletbook.com/patterns/normal/148888/" placeholder="https://www.braceletbook.com/patterns/normal/199552/">
         </div>
 
-        <h2>Parameters (in cm)</h2>
+        <div class="toggle-container">
+            <span class="toggle-label">Units:</span>
+            <div class="toggle-unit-group">
+                <button class="toggle-unit-btn" data-unit="inches">Inches</button>
+                <button class="toggle-unit-btn" data-unit="cm">Centimeters</button>
+            </div>
+        </div>
+
+        <h2 id="parametersHeader">Parameters (in cm)</h2>
         <div class="input-group">
-            <label for="startLength">Length for Start (Loop/Buckle)</label>
+            <label for="startLength">Length for Start (Loop/Buckle) <span class="parameter-unit">(cm)</span></label>
             <input type="number" id="startLength" value="15">
         </div>
         <div class="input-group">
-            <label for="endLength">Length for End (Ties)</label>
+            <label for="endLength">Length for End (Ties) <span class="parameter-unit">(cm)</span></label>
             <input type="number" id="endLength" value="20">
         </div>
         <div class="input-group">
-            <label for="bufferLength">Safety Buffer</label>
+            <label for="bufferLength">Safety Buffer <span class="parameter-unit">(cm)</span></label>
             <input type="number" id="bufferLength" value="10">
         </div>
 
@@ -120,20 +274,144 @@
         <div id="results"></div>
     </div>
 
+    <div class="container">
+        <div id="patternContainer" style="display: none;">
+            <h2>📐 Pattern Visualization</h2>
+            <div id="svgDisplay" style="overflow: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px; background-color: #f9f9f9; max-height: 600px;"></div>
+        </div>
+    </div>
+
     <script>
         const calculateBtn = document.getElementById('calculateBtn');
         const svgUrlInput = document.getElementById('svgUrl');
         const statusEl = document.getElementById('status');
         const resultsEl = document.getElementById('results');
 
-        // Constants from the BraceletBook tutorial
-        const ACTIVE_KNOT_LENGTH = 0.75; // cm
-        const BASE_KNOT_LENGTH = 0.25; // cm
+        // Unit conversion variables
+        let useInches = true; // Default to inches
+        const CM_TO_INCHES = 0.393701;
+
+        // Initialize the default active button
+        document.querySelectorAll('.toggle-unit-btn').forEach(button => {
+            if (button.dataset.unit === 'inches') {
+                button.classList.add('active');
+            }
+        });
+
+        function updateParameterUnits() {
+            const startLen = parseFloat(document.getElementById('startLength').value) || 0;
+            const endLen = parseFloat(document.getElementById('endLength').value) || 0;
+            const bufferLen = parseFloat(document.getElementById('bufferLength').value) || 0;
+            const headerEl = document.getElementById('parametersHeader');
+            const unitLabels = document.querySelectorAll('.parameter-unit');
+
+            if (useInches) {
+                // Convert from cm to inches
+                document.getElementById('startLength').value = (startLen * CM_TO_INCHES).toFixed(2);
+                document.getElementById('endLength').value = (endLen * CM_TO_INCHES).toFixed(2);
+                document.getElementById('bufferLength').value = (bufferLen * CM_TO_INCHES).toFixed(2);
+                headerEl.textContent = 'Parameters (in inches)';
+                unitLabels.forEach(label => label.textContent = '(in)');
+            } else {
+                // Convert from inches to cm
+                document.getElementById('startLength').value = (startLen / CM_TO_INCHES).toFixed(2);
+                document.getElementById('endLength').value = (endLen / CM_TO_INCHES).toFixed(2);
+                document.getElementById('bufferLength').value = (bufferLen / CM_TO_INCHES).toFixed(2);
+                headerEl.textContent = 'Parameters (in cm)';
+                unitLabels.forEach(label => label.textContent = '(cm)');
+            }
+        }
+
+        // Call on page load to initialize with the default unit (inches)
+        updateParameterUnits();
+
+        // Unit toggle event listener
+        document.querySelectorAll('.toggle-unit-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.toggle-unit-btn').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                useInches = button.dataset.unit === 'inches';
+                updateParameterUnits();
+                
+                // Recalculate and redisplay if results exist
+                if (lastCalculationData) {
+                    displayResults(lastCalculationData.strings, lastCalculationData.numRows);
+                }
+            });
+        });
+
+        let lastCalculationData = null;
+        let viewMode = 'pattern'; // Default to 'pattern'
+
+        function validateAndNormalizeUrl(url) {
+            // Check if it's a BraceletBook URL
+            if (!url.includes('braceletbook.com')) {
+                throw new Error('Please enter a valid BraceletBook.com URL.');
+            }
+
+            // Check if it's a pattern page URL and convert it to SVG URL
+            const patternPageMatch = url.match(/\/patterns\/normal\/(\d+)/);
+            if (patternPageMatch) {
+                const patternId = patternPageMatch[1];
+                url = constructSvgUrl(patternId);
+                statusEl.textContent = `Extracting pattern.svg from pattern #${patternId}...`;
+                return url;
+            }
+
+            // Check if it's already a media/patterns URL
+            if (!url.includes('/media/patterns/')) {
+                throw new Error('Please enter a BraceletBook pattern page URL or pattern.svg URL.');
+            }
+
+            // Convert preview.svg to pattern.svg
+            if (url.endsWith('preview.svg')) {
+                url = url.replace('preview.svg', 'pattern.svg');
+                statusEl.textContent = 'Converting preview.svg to pattern.svg...';
+            }
+
+            // Ensure it ends with .svg
+            if (!url.endsWith('.svg')) {
+                throw new Error('URL must point to an SVG file (.svg).');
+            }
+
+            // Ensure it's pattern.svg (not preview.svg or other variants)
+            if (!url.endsWith('pattern.svg')) {
+                throw new Error('Please use the pattern.svg URL (not preview.svg or other variants).');
+            }
+
+            return url;
+        }
+
+        function constructSvgUrl(patternId) {
+            // Pad the pattern ID to 12 digits with leading zeros
+            const paddedId = patternId.padStart(12, '0');
+            
+            // Split into directory structure: every 3 digits
+            // Example: 199552 -> 000000199552 -> 000/000/199/552
+            const part1 = paddedId.substring(0, 3);
+            const part2 = paddedId.substring(3, 6);
+            const part3 = paddedId.substring(6, 9);
+            const part4 = paddedId.substring(9, 12);
+            
+            return `https://www.braceletbook.com/media/patterns/${part1}/${part2}/${part3}/${part4}/${paddedId}/pattern.svg`;
+        }
 
         calculateBtn.addEventListener('click', async () => {
-            const url = svgUrlInput.value.trim();
+            let url = svgUrlInput.value.trim();
             if (!url) {
                 statusEl.textContent = 'Please enter a valid URL.';
+                return;
+            }
+
+            // Validate and normalize the URL
+            try {
+                const normalizedUrl = validateAndNormalizeUrl(url);
+                if (normalizedUrl !== url) {
+                    svgUrlInput.value = normalizedUrl;
+                }
+                url = normalizedUrl;
+            } catch (error) {
+                statusEl.textContent = error.message;
                 return;
             }
 
@@ -162,7 +440,17 @@
                     throw new Error("Failed to parse SVG. Make sure it's a valid SVG file.");
                 }
 
-                calculateLengths(svgDoc);
+                const { strings, numRows } = calculateLengths(svgDoc);
+                lastCalculationData = { strings, numRows };
+                displayResults(strings, numRows);
+                
+                // Embed the SVG at the bottom of the page
+                const svgDisplay = document.getElementById('svgDisplay');
+                const patternContainer = document.getElementById('patternContainer');
+                svgDisplay.innerHTML = '';
+                const svgElement = svgDoc.documentElement.cloneNode(true);
+                svgDisplay.appendChild(svgElement);
+                patternContainer.style.display = 'block';
 
             } catch (error) {
                 statusEl.textContent = `Error: ${error.message}. Check the URL and your network connection.`;
@@ -173,41 +461,65 @@
         });
 
         function calculateLengths(svgDoc) {
-            // 1. Get initial string setup from the first row of circles
-            const firstRowCircles = svgDoc.querySelectorAll('g.row:first-of-type circle');
-            if (firstRowCircles.length === 0) {
+            // 1. Get initial string colors from <g class="s"> elements
+            const stringElements = svgDoc.querySelectorAll('g.s');
+            if (stringElements.length === 0) {
                 throw new Error("Could not find initial strings. Is this a valid BraceletBook normal pattern SVG?");
             }
 
-            let strings = Array.from(firstRowCircles).map(circle => {
-                const color = circle.style.fill;
+            // Extract colors from the string paths (e.g., s1-a, s1-b, s1-c)
+            let strings = Array.from(stringElements).map((stringEl, idx) => {
+                const pathEl = stringEl.querySelector('use.s1');
+                const classList = Array.from(pathEl.classList);
+                // Find the color class (e.g., s1-a, s1-b, s1-c)
+                const colorClass = classList.find(c => c.startsWith('s1-'));
+                const colorId = colorClass ? colorClass.split('-')[1] : `color${idx}`;
+                
                 return {
-                    color: color,
-                    active_knots: 0,
-                    base_knots: 0
+                    colorId: colorId,
+                    position: idx,
+                    knotsMade: 0
                 };
             });
 
-            // This array will track the LIVE positions of strings as we move down
-            let stringPositions = [...strings]; 
+            // Count total rows (look for text elements with class "n n_l" which mark rows)
+            const rowElements = svgDoc.querySelectorAll('text.n.n_l');
+            const numRows = rowElements.length;
+            
+            if (numRows === 0) {
+                throw new Error("Could not determine number of rows in pattern.");
+            }
 
-            // 2. Process all knots
-            const knots = svgDoc.querySelectorAll('g.knot');
+            // This array tracks the current positions of strings as we process knots
+            let stringPositions = strings.map((s, i) => ({ ...s }));
+
+            // 2. Process all knots to track string movements and count knots made
+            const knots = svgDoc.querySelectorAll('g.k');
             knots.forEach(knot => {
+                const ellipse = knot.querySelector('ellipse');
+                if (!ellipse) return;
+
+                // Get knot position
+                const cx = parseFloat(ellipse.getAttribute('cx'));
+                const cy = parseFloat(ellipse.getAttribute('cy'));
+                
+                // Get knot color (which string is making the knot)
+                const ellipseClasses = Array.from(ellipse.classList);
+                const knotColorClass = ellipseClasses.find(c => c.startsWith('kk-'));
+                if (!knotColorClass) return;
+                
+                const knotColorId = knotColorClass.split('-')[1];
+                
+                // Get knot type
                 const useEl = knot.querySelector('use');
                 if (!useEl) return;
-
-                const knotType = useEl.getAttribute('xlink:href').replace('#', '');
-                const activeColor = useEl.style.fill;
-
-                // Determine which strings are involved based on knot position
-                const transform = knot.getAttribute('transform');
-                const xPos = parseFloat(transform.match(/translate\(([\d.]+)/)[1]);
                 
-                // In BB patterns, strings are typically 16 units apart, starting at x=16
-                // A knot at x=16 is between string 0 and 1.
-                // A knot at x=32 is between string 1 and 2.
-                const leftStringIndex = Math.round((xPos - 16) / 16);
+                const knotType = useEl.getAttribute('xlink:href').replace('#', '');
+                
+                // Determine which strings are involved based on cx position
+                // Strings start at x=44 and are 38 units apart
+                // Knots are positioned between strings
+                const leftStringIndex = Math.round((cx - 63) / 38);
                 const rightStringIndex = leftStringIndex + 1;
                 
                 if (leftStringIndex < 0 || rightStringIndex >= stringPositions.length) return;
@@ -215,73 +527,198 @@
                 const leftString = stringPositions[leftStringIndex];
                 const rightString = stringPositions[rightStringIndex];
 
-                let activeString, baseString;
-                
-                // Identify which is active and which is base
-                if (leftString.color === activeColor) {
+                // Determine which string is making the knot (active string)
+                let activeString;
+                if (leftString.colorId === knotColorId) {
                     activeString = leftString;
-                    baseString = rightString;
-                } else if (rightString.color === activeColor) {
+                } else if (rightString.colorId === knotColorId) {
                     activeString = rightString;
-                    baseString = leftString;
                 } else {
-                    // This can happen if two strings of the same color are next to each other.
-                    // The logic assumes the knotter is the one moving.
-                    if (knotType === 'fk' || knotType === 'fkbk') activeString = leftString; // Left string knots over right
-                    else activeString = rightString; // Right string knots over left
-                    baseString = (activeString === leftString) ? rightString : leftString;
+                    // Fallback: determine by knot type
+                    if (knotType === 'kf' || knotType === 'kfb') {
+                        activeString = leftString;
+                    } else {
+                        activeString = rightString;
+                    }
                 }
 
-                // 3. Update knot counts
-                const knotValue = (knotType === 'fkbk' || knotType === 'bkfk') ? 2 : 1;
-                activeString.active_knots += knotValue;
-                baseString.base_knots += 1;
+                // Count the knot for the active string
+                // Double knots (kfb, kbf) count as 2, single knots (kf, kb) count as 1
+                const knotCount = (knotType === 'kfb' || knotType === 'kbf') ? 2 : 1;
+                
+                // Find the original string in our strings array and increment its count
+                const originalString = strings.find(s => s.colorId === activeString.colorId && s.position === activeString.position);
+                if (originalString) {
+                    originalString.knotsMade += knotCount;
+                }
 
-                // 4. Swap string positions if necessary
-                if (knotType === 'fk' || knotType === 'bk') {
+                // Swap string positions if it's a regular knot (not a double knot on the same side)
+                if (knotType === 'kf' || knotType === 'kb') {
                     stringPositions[leftStringIndex] = rightString;
                     stringPositions[rightStringIndex] = leftString;
                 }
             });
 
-            // 5. Calculate final lengths and display
-            displayResults(strings);
+            return { strings, numRows };
         }
 
-        function displayResults(strings) {
-            const startLen = parseFloat(document.getElementById('startLength').value) || 0;
-            const endLen = parseFloat(document.getElementById('endLength').value) || 0;
-            const bufferLen = parseFloat(document.getElementById('bufferLength').value) || 0;
-            const overhead = startLen + endLen + bufferLen;
+        function displayResults(strings, numRows) {
+            let startLen = parseFloat(document.getElementById('startLength').value) || 0;
+            let endLen = parseFloat(document.getElementById('endLength').value) || 0;
+            let bufferLen = parseFloat(document.getElementById('bufferLength').value) || 0;
+            
+            // Convert from currently displayed unit to cm for calculation
+            if (useInches) {
+                startLen = startLen / CM_TO_INCHES;  // inches to cm
+                endLen = endLen / CM_TO_INCHES;
+                bufferLen = bufferLen / CM_TO_INCHES;
+            }
+            // else: values are already in cm
+            
+            const baseLength = startLen + endLen + bufferLen;
+
+            // Convert to display unit if needed
+            const displayStartLen = useInches ? startLen * CM_TO_INCHES : startLen;
+            const displayEndLen = useInches ? endLen * CM_TO_INCHES : endLen;
+            const displayBufferLen = useInches ? bufferLen * CM_TO_INCHES : bufferLen;
+            const displayBaseLength = useInches ? baseLength * CM_TO_INCHES : baseLength;
+            const unitSymbol = useInches ? 'in' : 'cm';
+
+            // Create helper function to render table rows
+            const getTableRows = (stringsToDisplay) => {
+                let html = '';
+                stringsToDisplay.forEach((s, displayIdx) => {
+                    // Formula from tutorial: length = base + (knots_made / rows) × 100
+                    const percentage = (s.knotsMade / numRows) * 100;
+                    const totalLength = baseLength + percentage;
+                    const displayTotalLength = useInches ? totalLength * CM_TO_INCHES : totalLength;
+
+                    // Map color IDs to more readable names
+                    const colorMap = {
+                        'a': '#a11567',
+                        'b': '#fa91d7', 
+                        'c': '#ffffff'
+                    };
+                    const colorHex = colorMap[s.colorId] || s.colorId;
+
+                    // For pattern order, show original position + 1; for grouped, show the display index
+                    const stringNum = viewMode === 'pattern' ? s.position + 1 : displayIdx + 1;
+
+                    html += `
+                        <tr>
+                            <td class="checkbox-cell"><input type="checkbox" class="stringCheckbox" data-string-id="${s.colorId}"></td>
+                            <td>${stringNum}</td>
+                            <td><span class="color-swatch" style="background-color: ${colorHex}; ${s.colorId === 'c' ? 'border: 2px solid #ccc;' : ''}"></span> ${s.colorId.toUpperCase()}</td>
+                            <td>${s.knotsMade} knots</td>
+                            <td>${percentage.toFixed(1)}%</td>
+                            <td>${displayBaseLength.toFixed(2)} ${unitSymbol}</td>
+                            <td><strong>${displayTotalLength.toFixed(2)} ${unitSymbol}</strong></td>
+                        </tr>
+                    `;
+                });
+                return html;
+            };
+
+            // Determine which strings to display and in what order
+            let stringsToDisplay = strings;
+            if (viewMode === 'grouped') {
+                // Group by color and sort
+                const grouped = {};
+                strings.forEach(s => {
+                    if (!grouped[s.colorId]) {
+                        grouped[s.colorId] = [];
+                    }
+                    grouped[s.colorId].push(s);
+                });
+                // Flatten back to array with consistent order
+                stringsToDisplay = Object.keys(grouped).sort().flatMap(colorId => grouped[colorId]);
+            }
 
             let tableHTML = `
-                <h2>📊 Estimated Lengths</h2>
+                <h2>📊 Estimated Lengths (${numRows} rows)</h2>
+                <div class="toggle-container" style="margin-bottom: 15px;">
+                    <span class="toggle-label">View:</span>
+                    <div class="toggle-unit-group" style="width: auto;">
+                        <button class="toggle-unit-btn view-toggle-btn ${viewMode === 'pattern' ? 'active' : ''}" data-view="pattern">Pattern Order</button>
+                        <button class="toggle-unit-btn view-toggle-btn ${viewMode === 'grouped' ? 'active' : ''}" data-view="grouped">Grouped by Color</button>
+                    </div>
+                </div>
                 <table>
                     <tr>
+                        <th><input type="checkbox" id="selectAllCheckboxes"></th>
+                        <th>String #</th>
                         <th>Color</th>
-                        <th>Knotting Length</th>
-                        <th>Total Overhead</th>
-                        <th><strong>Total Estimated Length</strong></th>
+                        <th>Knots Made</th>
+                        <th>Percentage</th>
+                        <th>Base Length</th>
+                        <th><strong>Total Length</strong></th>
                     </tr>
-            `;
+                    ${getTableRows(stringsToDisplay)}
+                </table>`;
 
-            strings.forEach(s => {
-                const knottingLength = (s.active_knots * ACTIVE_KNOT_LENGTH) + (s.base_knots * BASE_KNOT_LENGTH);
-                const totalLength = knottingLength + overhead;
-
-                tableHTML += `
-                    <tr>
-                        <td><span class="color-swatch" style="background-color: ${s.color};"></span> ${s.color}</td>
-                        <td>${knottingLength.toFixed(2)} cm</td>
-                        <td>${overhead.toFixed(2)} cm</td>
-                        <td><strong>${totalLength.toFixed(2)} cm</strong></td>
-                    </tr>
-                `;
-            });
-
-            tableHTML += '</table>';
+            tableHTML += `<p style="margin-top: 15px; font-size: 14px; color: #666;">
+                <strong>Note:</strong> Formula used: Length = Base (${displayBaseLength.toFixed(2)}${unitSymbol}) + Percentage of knots made<br>
+                Base = Start (${displayStartLen.toFixed(2)}${unitSymbol}) + End (${displayEndLen.toFixed(2)}${unitSymbol}) + Buffer (${displayBufferLen.toFixed(2)}${unitSymbol})
+            </p>`;
+            
             resultsEl.innerHTML = tableHTML;
             statusEl.textContent = 'Calculation complete.';
+            
+            // Add event listeners for view toggle buttons
+            document.querySelectorAll('.view-toggle-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    document.querySelectorAll('.view-toggle-btn').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    viewMode = button.dataset.view;
+                    displayResults(strings, numRows);
+                });
+            });
+            
+            // Add event listeners for checkboxes
+            const selectAllCheckbox = document.getElementById('selectAllCheckboxes');
+            const stringCheckboxes = document.querySelectorAll('.stringCheckbox');
+            
+            // Handle individual checkbox changes
+            stringCheckboxes.forEach((checkbox, index) => {
+                checkbox.addEventListener('change', (e) => {
+                    const row = e.target.closest('tr');
+                    if (e.target.checked) {
+                        row.classList.add('checked');
+                    } else {
+                        row.classList.remove('checked');
+                    }
+                    
+                    // Update select-all checkbox state
+                    const allChecked = Array.from(stringCheckboxes).every(cb => cb.checked);
+                    selectAllCheckbox.checked = allChecked;
+                });
+                
+                // Add click handler to the entire row
+                const row = checkbox.closest('tr');
+                row.addEventListener('click', (e) => {
+                    // Only toggle if not clicking the checkbox itself
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                });
+                
+                // Make the row cursor indicate it's clickable
+                row.style.cursor = 'pointer';
+            });
+            
+            // Handle select-all checkbox
+            selectAllCheckbox.addEventListener('change', (e) => {
+                stringCheckboxes.forEach(checkbox => {
+                    checkbox.checked = e.target.checked;
+                    const row = checkbox.closest('tr');
+                    if (e.target.checked) {
+                        row.classList.add('checked');
+                    } else {
+                        row.classList.remove('checked');
+                    }
+                });
+            });
         }
     </script>
 
