@@ -235,11 +235,6 @@
     <div class="container">
         <h1>🧵 Bracelet String Length Calculator</h1>
         <p>Paste a link to a <strong>normal pattern</strong> from BraceletBook.com to calculate the estimated string lengths.</p>
-        <p style="font-size: 14px; color: #666; margin-top: -10px;">
-            <strong>Tip:</strong> You can paste either:<br>
-            • A pattern page URL (e.g., <code>braceletbook.com/patterns/normal/199552/</code>)<br>
-            • Or the direct <code>pattern.svg</code> URL (preview.svg will be automatically converted)
-        </p>
 
         <div class="input-group">
             <label for="svgUrl">BraceletBook Pattern URL</label>
@@ -406,9 +401,6 @@
             // Validate and normalize the URL
             try {
                 const normalizedUrl = validateAndNormalizeUrl(url);
-                if (normalizedUrl !== url) {
-                    svgUrlInput.value = normalizedUrl;
-                }
                 url = normalizedUrl;
             } catch (error) {
                 statusEl.textContent = error.message;
