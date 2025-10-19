@@ -1,0 +1,22 @@
+{
+  "name": "friendship-bracelet-string-lengths",
+  "version": "1.0.0",
+  "description": "Bracelet String Length Calculator for BraceletBook.com patterns",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler deploy --dry-run"
+  },
+  "keywords": [
+    "bracelet",
+    "string-length",
+    "calculator",
+    "braceletbook"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
