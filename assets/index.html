@@ -37,6 +37,8 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             box-sizing: border-box;
+            background-color: white;
+            color: black;
         }
         button {
             display: block;
@@ -191,6 +193,24 @@
             width: 18px;
             height: 18px;
             accent-color: #007bff;
+            appearance: none;
+            -webkit-appearance: none;
+            background-color: white;
+            border: 2px solid #ccc;
+            border-radius: 3px;
+            padding: 0;
+            margin: 0;
+        }
+        input[type="checkbox"]:checked {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        input[type="checkbox"]:checked::after {
+            content: "✓";
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
         }
         tr.checked {
             background-color: #e8f4f8;
