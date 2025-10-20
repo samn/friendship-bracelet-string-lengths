@@ -2,13 +2,7 @@
   "name": "friendship-bracelet-string-lengths",
   "main": "src/index.js",
   "compatibility_date": "2025-06-05",
-  "env": {
-    "production": {
-      "name": "friendship-bracelet-string-lengths-prod"
-    }
-  },
   "assets": {
     "directory": "assets"
-
   }
 }
