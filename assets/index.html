@@ -309,6 +309,11 @@
             <input type="number" id="bufferLength" value="10">
         </div>
 
+        <div class="input-group">
+            <label for="braceletLength">Total Desired Bracelet Length <span class="parameter-unit">(cm)</span></label>
+            <input type="number" id="braceletLength" value="50">
+        </div>
+
         <button id="calculateBtn">Calculate Lengths</button>
         
         <div id="status"></div>
@@ -381,6 +386,7 @@
             const startLen = parseFloat(document.getElementById('startLength').value) || 0;
             const endLen = parseFloat(document.getElementById('endLength').value) || 0;
             const bufferLen = parseFloat(document.getElementById('bufferLength').value) || 0;
+            const braceletLen = parseFloat(document.getElementById('braceletLength').value) || 0;
             const headerEl = document.getElementById('parametersHeader');
             const unitLabels = document.querySelectorAll('.parameter-unit');
 
@@ -389,6 +395,7 @@
                 document.getElementById('startLength').value = (startLen * CM_TO_INCHES).toFixed(2);
                 document.getElementById('endLength').value = (endLen * CM_TO_INCHES).toFixed(2);
                 document.getElementById('bufferLength').value = (bufferLen * CM_TO_INCHES).toFixed(2);
+                document.getElementById('braceletLength').value = (braceletLen * CM_TO_INCHES).toFixed(2);
                 headerEl.textContent = 'Parameters (in inches)';
                 unitLabels.forEach(label => label.textContent = '(in)');
             } else {
@@ -396,6 +403,7 @@
                 document.getElementById('startLength').value = (startLen / CM_TO_INCHES).toFixed(2);
                 document.getElementById('endLength').value = (endLen / CM_TO_INCHES).toFixed(2);
                 document.getElementById('bufferLength').value = (bufferLen / CM_TO_INCHES).toFixed(2);
+                document.getElementById('braceletLength').value = (braceletLen / CM_TO_INCHES).toFixed(2);
                 headerEl.textContent = 'Parameters (in cm)';
                 unitLabels.forEach(label => label.textContent = '(cm)');
             }
@@ -417,6 +425,28 @@
                     displayResults(lastCalculationData.strings, lastCalculationData.numRows);
                 }
             });
+        });
+
+        // Add event listeners to parameter inputs to trigger recalculation when changed
+        document.getElementById('startLength').addEventListener('change', () => {
+            if (lastCalculationData) {
+                displayResults(lastCalculationData.strings, lastCalculationData.numRows);
+            }
+        });
+        document.getElementById('endLength').addEventListener('change', () => {
+            if (lastCalculationData) {
+                displayResults(lastCalculationData.strings, lastCalculationData.numRows);
+            }
+        });
+        document.getElementById('bufferLength').addEventListener('change', () => {
+            if (lastCalculationData) {
+                displayResults(lastCalculationData.strings, lastCalculationData.numRows);
+            }
+        });
+        document.getElementById('braceletLength').addEventListener('change', () => {
+            if (lastCalculationData) {
+                displayResults(lastCalculationData.strings, lastCalculationData.numRows);
+            }
         });
 
         let lastCalculationData = null;
@@ -771,12 +801,14 @@
             let startLen = parseFloat(document.getElementById('startLength').value) || 0;
             let endLen = parseFloat(document.getElementById('endLength').value) || 0;
             let bufferLen = parseFloat(document.getElementById('bufferLength').value) || 0;
+            let braceletLen = parseFloat(document.getElementById('braceletLength').value) || 0;
             
             // Convert from currently displayed unit to cm for calculation
             if (useInches) {
                 startLen = startLen / CM_TO_INCHES;  // inches to cm
                 endLen = endLen / CM_TO_INCHES;
                 bufferLen = bufferLen / CM_TO_INCHES;
+                braceletLen = braceletLen / CM_TO_INCHES;
             }
             // else: values are already in cm
             
@@ -802,9 +834,12 @@
             const getTableRows = (stringsToDisplay) => {
                 let html = '';
                 stringsToDisplay.forEach((s, displayIdx) => {
-                    // Formula from tutorial: length = base + (knots_made / rows) × 100
-                    const percentage = (s.knotsMade / numRows) * 100;
-                    const totalLength = baseLength + percentage;
+                    // Formula: length = base + (knots_made / rows) × bracelet_length
+                    // This ensures strings wrap around the bracelet properly
+                    // When knots_made = 0, the string gets base + 0 = base (correct for unwrapped strings)
+                    // When knots_made > 0, add extra length proportional to how much the string "travels" making knots
+                    const knotRatio = numRows > 0 ? s.knotsMade / numRows : 0;
+                    const totalLength = baseLength + (knotRatio * braceletLen);
                     const displayTotalLength = useInches ? totalLength * CM_TO_INCHES : totalLength;
 
                     // Use actual color for display
@@ -822,7 +857,7 @@
                             <td>${stringNum}</td>
                             <td><span class="color-swatch" style="background-color: ${colorHex};"></span> ${s.colorId.toUpperCase()}</td>
                             <td>${s.knotsMade} knots</td>
-                            <td>${percentage.toFixed(1)}%</td>
+                            <td>${(knotRatio * 100).toFixed(1)}%</td>
                             <td>${formatInches(displayBaseLength * lengthMultiplier, useInches)} ${unitSymbol}</td>
                             <td><strong>${formatInches(displayTotalLength * lengthMultiplier, useInches)} ${unitSymbol}</strong></td>
                         </tr>
@@ -878,7 +913,7 @@
                 </table>`;
 
             tableHTML += `<p style="margin-top: 15px; font-size: 14px; color: #666;">
-                <strong>Note:</strong> Formula used: Length = Base (${formatInches(displayBaseLength, useInches)}${unitSymbol}) + Percentage of knots made<br>
+                <strong>Note:</strong> Formula used: Length = Base (${formatInches(displayBaseLength, useInches)}${unitSymbol}) + (Knots Made / Total Rows) × Bracelet Length (${formatInches(useInches ? braceletLen * CM_TO_INCHES : braceletLen, useInches)}${unitSymbol})<br>
                 Base = Start (${formatInches(displayStartLen, useInches)}${unitSymbol}) + End (${formatInches(displayEndLen, useInches)}${unitSymbol}) + Buffer (${formatInches(displayBufferLen, useInches)}${unitSymbol})
             </p>`;
             

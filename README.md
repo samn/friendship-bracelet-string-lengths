@@ -73,13 +73,14 @@ npm run preview
 
 The calculator uses the following formula:
 ```
-String Length = Base Length + (Number of Knots / Total Rows) × 100
+String Length = Base Length + (Number of Knots / Total Rows) × Bracelet Length
 ```
 
 Where:
 - **Base Length** = Start Length + End Length + Safety Buffer
 - **Number of Knots** = Total knots made with that color string
 - **Total Rows** = Number of rows in the pattern
+- **Bracelet Length** = Desired total circumference of the finished bracelet
 
 ## Project Structure
 
