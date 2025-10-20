@@ -339,6 +339,44 @@
             }
         });
 
+        /**
+         * Update the URL fragment with the current pattern URL
+         */
+        function updateUrlFragment() {
+            const pattern = svgUrlInput.value.trim();
+            if (pattern) {
+                window.location.hash = `#pattern=${encodeURIComponent(pattern)}`;
+            } else {
+                // Clear the fragment if input is empty
+                window.history.replaceState(null, '', window.location.pathname);
+            }
+        }
+
+        /**
+         * Load pattern from URL fragment if present
+         */
+        function loadPatternFromUrl() {
+            const hash = window.location.hash;
+            if (hash.startsWith('#pattern=')) {
+                const pattern = decodeURIComponent(hash.substring(9)); // Remove "#pattern="
+                svgUrlInput.value = pattern;
+                // Auto-calculate after prefilling
+                calculateBtn.click();
+            }
+        }
+
+        // Load pattern from URL on page load
+        window.addEventListener('load', loadPatternFromUrl);
+
+        // Update URL fragment when the input changes (with debouncing to avoid excessive updates)
+        let urlUpdateTimeout;
+        svgUrlInput.addEventListener('input', () => {
+            clearTimeout(urlUpdateTimeout);
+            urlUpdateTimeout = setTimeout(() => {
+                updateUrlFragment();
+            }, 500); // Wait 500ms after user stops typing
+        });
+
         function updateParameterUnits() {
             const startLen = parseFloat(document.getElementById('startLength').value) || 0;
             const endLen = parseFloat(document.getElementById('endLength').value) || 0;
@@ -471,6 +509,32 @@
             return `https://www.braceletbook.com/media/patterns/${part1}/${part2}/${part3}/${part4}/${paddedId}/pattern.svg`;
         }
 
+        /**
+         * Extract pattern ID from any valid BraceletBook URL format
+         */
+        function extractPatternIdFromAnyUrl(url) {
+            // Try pattern page format: /patterns/normal/ID
+            let match = url.match(/\/patterns\/normal\/(\d+)/);
+            if (match) return match[1];
+            
+            // Try SVG URL format: /media/patterns/.../PADDED_ID/pattern.svg
+            match = url.match(/\/media\/patterns\/[\d\/]+\/(\d+)\/pattern\.svg/);
+            if (match) {
+                const paddedId = match[1];
+                // Remove leading zeros to get original pattern ID
+                return paddedId.replace(/^0+/, '') || '0';
+            }
+            
+            return null;
+        }
+
+        /**
+         * Construct the user-friendly BraceletBook pattern URL
+         */
+        function getUserFriendlyUrl(patternId) {
+            return `https://www.braceletbook.com/patterns/normal/${patternId}/`;
+        }
+
         calculateBtn.addEventListener('click', async () => {
             let url = svgUrlInput.value.trim();
             if (!url) {
@@ -481,6 +545,19 @@
             // Validate and normalize the URL
             try {
                 const normalizedUrl = validateAndNormalizeUrl(url);
+                
+                // Extract pattern ID from original input and construct user-friendly URL
+                const patternId = extractPatternIdFromAnyUrl(url);
+                let displayUrl = url;
+                if (patternId) {
+                    displayUrl = getUserFriendlyUrl(patternId);
+                }
+                
+                // Update input with display URL and update the URL fragment
+                svgUrlInput.value = displayUrl;
+                updateUrlFragment();
+                
+                // Use the normalized SVG URL for fetching
                 url = normalizedUrl;
             } catch (error) {
                 statusEl.textContent = error.message;
@@ -539,7 +616,16 @@
             if (pastedText) {
                 try {
                     const normalizedUrl = validateAndNormalizeUrl(pastedText);
-                    svgUrlInput.value = normalizedUrl;
+                    
+                    // Extract pattern ID and construct user-friendly URL
+                    const patternId = extractPatternIdFromAnyUrl(pastedText);
+                    let displayUrl = pastedText;
+                    if (patternId) {
+                        displayUrl = getUserFriendlyUrl(patternId);
+                    }
+                    
+                    svgUrlInput.value = displayUrl;
+                    updateUrlFragment();
                     // Trigger calculation after pasting
                     calculateBtn.click();
                 } catch (error) {
