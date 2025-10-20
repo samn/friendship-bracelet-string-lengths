@@ -358,6 +358,39 @@
         let lastCalculationData = null;
         let viewMode = 'pattern'; // Default to 'pattern'
 
+        /**
+         * Convert decimal inches to fractional representation (1/8ths)
+         * Rounds to nearest 1/8, then displays as whole number + simplified fraction
+         * Examples: 10.5 -> "10 1/2 in", 10.375 -> "10 3/8 in", 10.0625 -> "10 1/16 in" (but we only go to 1/8)
+         */
+        function formatInches(value, isInchesMode) {
+            if (!isInchesMode || value === 0) {
+                return value.toFixed(2);
+            }
+            
+            // Round to nearest 1/8 (0.125 inches)
+            const eighths = Math.round(value / 0.125);
+            const whole = Math.floor(eighths / 8);
+            const numerator = eighths % 8;
+            
+            // If no fractional part, just return whole number
+            if (numerator === 0) {
+                return whole.toString();
+            }
+            
+            // Simplify the fraction
+            const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+            const divisor = gcd(numerator, 8);
+            const simplifiedNumerator = numerator / divisor;
+            const simplifiedDenominator = 8 / divisor;
+            
+            // Format as "whole numerator/denominator" with superscript/subscript for fractions
+            const fractionHTML = `<sup>${simplifiedNumerator}</sup>/<sub>${simplifiedDenominator}</sub>`;
+            return whole > 0 
+                ? `${whole} ${fractionHTML}` 
+                : fractionHTML;
+        }
+
         function validateAndNormalizeUrl(url) {
             // Check if it's a BraceletBook URL
             if (!url.includes('braceletbook.com')) {
@@ -677,8 +710,8 @@
                             <td><span class="color-swatch" style="background-color: ${colorHex};"></span> ${s.colorId.toUpperCase()}</td>
                             <td>${s.knotsMade} knots</td>
                             <td>${percentage.toFixed(1)}%</td>
-                            <td>${displayBaseLength.toFixed(2)} ${unitSymbol}</td>
-                            <td><strong>${displayTotalLength.toFixed(2)} ${unitSymbol}</strong></td>
+                            <td>${formatInches(displayBaseLength, useInches)} ${unitSymbol}</td>
+                            <td><strong>${formatInches(displayTotalLength, useInches)} ${unitSymbol}</strong></td>
                         </tr>
                     `;
                 });
@@ -723,8 +756,8 @@
                 </table>`;
 
             tableHTML += `<p style="margin-top: 15px; font-size: 14px; color: #666;">
-                <strong>Note:</strong> Formula used: Length = Base (${displayBaseLength.toFixed(2)}${unitSymbol}) + Percentage of knots made<br>
-                Base = Start (${displayStartLen.toFixed(2)}${unitSymbol}) + End (${displayEndLen.toFixed(2)}${unitSymbol}) + Buffer (${displayBufferLen.toFixed(2)}${unitSymbol})
+                <strong>Note:</strong> Formula used: Length = Base (${formatInches(displayBaseLength, useInches)}${unitSymbol}) + Percentage of knots made<br>
+                Base = Start (${formatInches(displayStartLen, useInches)}${unitSymbol}) + End (${formatInches(displayEndLen, useInches)}${unitSymbol}) + Buffer (${formatInches(displayBufferLen, useInches)}${unitSymbol})
             </p>`;
             
             resultsEl.innerHTML = tableHTML;
